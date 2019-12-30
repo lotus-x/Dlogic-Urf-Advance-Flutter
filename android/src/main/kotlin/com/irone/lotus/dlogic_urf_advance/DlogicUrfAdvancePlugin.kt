@@ -8,6 +8,7 @@ import android.text.TextUtils
 import android.widget.Toast
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -23,23 +24,12 @@ import kotlin.experimental.and
 
 /** DlogicUrfAdvancePlugin */
 class DlogicUrfAdvancePlugin : FlutterPlugin, MethodCallHandler, EventChannel.StreamHandler {
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        context = flutterPluginBinding.applicationContext
-
-        val channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "lotus/dlogic_urf_advance")
-        channel.setMethodCallHandler(DlogicUrfAdvancePlugin())
-
-        val eventChannel = EventChannel(flutterPluginBinding.flutterEngine.dartExecutor, "lotus/dlogic_urf_advance_stream")
-        eventChannel.setStreamHandler(DlogicUrfAdvancePlugin())
-    }
-
-    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    }
-
     companion object {
-        private lateinit var context: Context
+        private var context: Context? = null
         private lateinit var handler: Handler
         private lateinit var runnable: Runnable
+        private var methodChannel: MethodChannel? = null
+        private var eventChannel: EventChannel? = null
         private var eventSink: EventChannel.EventSink? = null
 
         private lateinit var device: DlReader
@@ -72,18 +62,35 @@ class DlogicUrfAdvancePlugin : FlutterPlugin, MethodCallHandler, EventChannel.St
         // in the same class.
         @JvmStatic
         fun registerWith(registrar: Registrar) {
-            context = registrar.context()
-
-            val channel = MethodChannel(registrar.messenger(), "dlogic_urf_advance")
-            channel.setMethodCallHandler(DlogicUrfAdvancePlugin())
-
-            val eventChannel = EventChannel(registrar.messenger(), "lotus/dlogic_urf_advance_stream")
-            eventChannel.setStreamHandler(DlogicUrfAdvancePlugin())
+            val instance: DlogicUrfAdvancePlugin = DlogicUrfAdvancePlugin()
+            instance.onAttachedToEngine(registrar.context(), registrar.messenger())
         }
 
         fun makeKeyDefault() {
             System.arraycopy(default_key, 0, key, 0, 6)
         }
+    }
+
+    fun onAttachedToEngine(applicationContext: Context, binaryMessenger: BinaryMessenger) {
+        context = applicationContext
+
+        methodChannel = MethodChannel(binaryMessenger, "lotus/dlogic_urf_advance")
+        methodChannel?.setMethodCallHandler(this)
+
+        eventChannel = EventChannel(binaryMessenger, "lotus/dlogic_urf_advance_stream")
+        eventChannel?.setStreamHandler(this)
+    }
+
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        onAttachedToEngine(flutterPluginBinding.applicationContext, flutterPluginBinding.binaryMessenger)
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        context = null
+        methodChannel?.setMethodCallHandler(null)
+        methodChannel = null
+        eventChannel?.setStreamHandler(null)
+        eventChannel = null
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
@@ -302,7 +309,7 @@ class DlogicUrfAdvancePlugin : FlutterPlugin, MethodCallHandler, EventChannel.St
         private var cParams: DlReader.CardParams = DlReader.CardParams()
 
         fun stopRequest() {
-            synchronized(context) {
+            synchronized(context!!) {
                 stopThread = true
             }
         }
