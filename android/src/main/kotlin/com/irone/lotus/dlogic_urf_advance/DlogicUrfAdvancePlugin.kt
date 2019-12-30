@@ -137,7 +137,7 @@ class DlogicUrfAdvancePlugin : FlutterPlugin, MethodCallHandler, EventChannel.St
                             Toast.makeText(context, e.toString(), Toast.LENGTH_SHORT).show()
                         }
 
-                    handler.postDelayed(this, 500)
+                    handler.postDelayed(this, 200)
                 }
             }
 

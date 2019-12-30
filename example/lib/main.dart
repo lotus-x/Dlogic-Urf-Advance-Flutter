@@ -225,6 +225,16 @@ class _MyAppState extends State<MyApp> {
                 padding: EdgeInsets.only(top: 20),
                 child: FlatButton(
                   onPressed: () {
+                    _dlogicUrfAdvance.connect();
+                  },
+                  color: Colors.blue,
+                  child: Text('Connect'),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 20),
+                child: FlatButton(
+                  onPressed: () {
                     _dlogicUrfAdvance.emitUiSignal();
                   },
                   color: Colors.blue,
